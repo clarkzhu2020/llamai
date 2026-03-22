@@ -56,6 +56,33 @@ func (c *VLLMClient) IsAvailable() bool {
 	return resp.StatusCode == 200
 }
 
+func (c *VLLMClient) ListModels() []string {
+	resp, err := c.Client.Get(c.BaseURL + "/v1/models")
+	if err != nil {
+		return nil
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return nil
+	}
+
+	var result struct {
+		Data []struct {
+			ID string `json:"id"`
+		} `json:"data"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil
+	}
+
+	models := make([]string, 0, len(result.Data))
+	for _, m := range result.Data {
+		models = append(models, m.ID)
+	}
+	return models
+}
+
 func (c *VLLMClient) Generate(ctx context.Context, prompt string, model string, params map[string]any) (string, error) {
 	reqBody := map[string]any{
 		"prompt": prompt,

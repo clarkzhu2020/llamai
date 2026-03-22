@@ -92,7 +92,7 @@
                 </div>
                 <div style="display:flex;gap:10px;margin-top:15px;">
                     <textarea id="chat-input" placeholder="Type your message..." rows="2" onkeydown="handleChatKeydown(event)"></textarea>
-                    <button onclick="sendChat()" style="height:fit-content">Send</button>
+                    <button id="chat-send-btn" onclick="sendChat()" style="height:fit-content">Send</button>
                 </div>
             </div>
         </div>
@@ -362,11 +362,24 @@
         }
 
         // Load Models
+        let backendStatus = {};
+        let availableOllamaModels = [];
+
         async function loadModels() {
             try {
+                // First fetch health to get backend status and available models
+                const healthRes = await fetch(`${API_BASE}/api/health`);
+                const healthData = await healthRes.json();
+                backendStatus = healthData.backends || {};
+                availableOllamaModels = healthData.ollama_models || [];
+                console.log('Health response:', healthData);
+                console.log('Backend status:', backendStatus);
+                console.log('Available Ollama models:', availableOllamaModels);
+                
                 const res = await fetch(`${API_BASE}/api/models`);
                 const data = await res.json();
                 allModels = data.models || [];
+                console.log('All models count:', allModels.length);
                 
                 const llm = allModels.filter(m => m.type === 'llm');
                 const vision = allModels.filter(m => m.type === 'vision');
@@ -385,17 +398,17 @@
                 updateModelSelect('setting-speech-model', speech);
                 updateModelSelect('setting-video-model', video);
                 
-                document.getElementById('llm-count').textContent = llm.length;
-                document.getElementById('vision-count').textContent = vision.length;
-                document.getElementById('image-count').textContent = image.length;
-                document.getElementById('speech-count').textContent = speech.length;
-                document.getElementById('video-count').textContent = video.length;
-                document.getElementById('llm-badge').textContent = llm.length;
-                document.getElementById('vision-badge').textContent = vision.length;
-                document.getElementById('image-badge').textContent = image.length;
-                document.getElementById('speech-badge').textContent = speech.length;
-                document.getElementById('video-badge').textContent = video.length;
-                document.getElementById('model-count').textContent = allModels.length;
+                document.getElementById('llm-count').textContent = llm.filter(m => isModelAvailable(m)).length + '/' + llm.length;
+                document.getElementById('vision-count').textContent = vision.filter(m => isModelAvailable(m)).length + '/' + vision.length;
+                document.getElementById('image-count').textContent = image.filter(m => isModelAvailable(m)).length + '/' + image.length;
+                document.getElementById('speech-count').textContent = speech.filter(m => isModelAvailable(m)).length + '/' + speech.length;
+                document.getElementById('video-count').textContent = video.filter(m => isModelAvailable(m)).length + '/' + video.length;
+                document.getElementById('llm-badge').textContent = llm.filter(m => isModelAvailable(m)).length + '/' + llm.length;
+                document.getElementById('vision-badge').textContent = vision.filter(m => isModelAvailable(m)).length + '/' + vision.length;
+                document.getElementById('image-badge').textContent = image.filter(m => isModelAvailable(m)).length + '/' + image.length;
+                document.getElementById('speech-badge').textContent = speech.filter(m => isModelAvailable(m)).length + '/' + speech.length;
+                document.getElementById('video-badge').textContent = video.filter(m => isModelAvailable(m)).length + '/' + video.length;
+                document.getElementById('model-count').textContent = allModels.filter(m => isModelAvailable(m)).length + '/' + allModels.length;
                 
                 renderModelList('llm-models', llm);
                 renderModelList('vision-models', vision);
@@ -403,34 +416,87 @@
                 renderModelList('speech-models', speech);
                 renderModelList('video-models', video);
                 
-                if (llm.length > 0 && !document.getElementById('chat-model').value) {
-                    document.getElementById('chat-model').value = llm[0].name;
+                // Auto-select first available model
+                const firstAvailableLLM = [...llm, ...vision].find(m => isModelAvailable(m));
+                if (firstAvailableLLM) {
+                    document.getElementById('chat-model').value = firstAvailableLLM.name;
                 }
-                if (image.length > 0 && !document.getElementById('image-model').value) {
-                    document.getElementById('image-model').value = image[0].name;
+                const firstAvailableImage = image.find(m => isModelAvailable(m));
+                if (firstAvailableImage) {
+                    document.getElementById('image-model').value = firstAvailableImage.name;
                 }
             } catch (e) {
                 console.error('Failed to load models:', e);
             }
         }
 
-        function updateModelSelect(id, models) {
-            const select = document.getElementById(id);
-            select.innerHTML = models.map(m => `<option value="${m.name}">${m.name} (${m.backend})</option>`).join('');
+        function isModelAvailable(model) {
+            console.log('isModelAvailable called:', model.backend, model.name, backendStatus);
+            // Map backend names to HealthResponse.Backends JSON field names (lowercase)
+            switch (model.backend) {
+                case 'ollama': return backendStatus.ollama === true && availableOllamaModels.includes(model.name);
+                case 'huggingface': return backendStatus.huggingface === true;
+                case 'llamacpp': return backendStatus.llamacpp === true;
+                case 'vllm': return backendStatus.vllm === true;
+                case 'sd_webui': return backendStatus.sdwebui === true;
+                case 'ltx_video': return backendStatus.ltxvideo === true;
+                default: console.log('Unknown backend:', model.backend); return false;
+            }
         }
 
-        function renderModelList(id, models) {
+        function updateModelSelect(id, modelList) {
+            const select = document.getElementById(id);
+            if (!select) return;
+            const available = modelList.filter(m => isModelAvailable(m));
+            const unavailable = modelList.filter(m => !isModelAvailable(m));
+            
+            let html = '<option value="">Select a model...</option>';
+            if (available.length > 0) {
+                html += '<optgroup label="Available">';
+                html += available.map(m => `<option value="${m.name}">${m.name}</option>`).join('');
+                html += '</optgroup>';
+            }
+            if (unavailable.length > 0) {
+                html += '<optgroup label="Not Available">';
+                html += unavailable.map(m => `<option value="${m.name}" disabled style="color:#666">${m.name} (${m.backend})</option>`).join('');
+                html += '</optgroup>';
+            }
+            select.innerHTML = html;
+        }
+
+        function renderModelList(id, modelList) {
             const el = document.getElementById(id);
-            if (models.length === 0) {
+            if (!el) return;
+            const available = modelList.filter(m => isModelAvailable(m));
+            const unavailable = modelList.filter(m => !isModelAvailable(m));
+            
+            if (modelList.length === 0) {
                 el.innerHTML = '<div class="model-item"><span style="color:#888">No models available</span></div>';
                 return;
             }
-            el.innerHTML = models.map(m => `
-                <div class="model-item" onclick="useModel('${m.type}', '${m.name}')">
-                    <span>${m.name}</span>
-                    <span class="badge badge-${getBadgeType(m.type)}">${m.type}</span>
-                </div>
-            `).join('');
+            
+            let html = '';
+            
+            if (available.length > 0) {
+                html += available.map(m => `
+                    <div class="model-item available" onclick="useModel('${m.type}', '${m.name}')">
+                        <span>${m.name}</span>
+                        <span class="badge badge-${getBadgeType(m.type)}">${m.type}</span>
+                    </div>
+                `).join('');
+            }
+            
+            if (unavailable.length > 0) {
+                html += '<div style="color:#666;font-size:0.8em;padding:5px 10px;border-top:1px solid #333;margin-top:5px;">Unavailable:</div>';
+                html += unavailable.map(m => `
+                    <div class="model-item unavailable" style="opacity:0.5;cursor:not-allowed;" title="Backend not connected: ${m.backend}">
+                        <span>${m.name}</span>
+                        <span class="badge" style="background:#666">${m.backend}</span>
+                    </div>
+                `).join('');
+            }
+            
+            el.innerHTML = html;
         }
 
         function getBadgeType(type) {
@@ -438,9 +504,11 @@
             return map[type] || 'llm';
         }
 
-        function useModel(type, name) {
-            switchPage(type === 'vision' ? 'chat' : type);
-            document.getElementById(`${type}-model`).value = name;
+        function useModel(modelType, name) {
+            switchPage(modelType === 'vision' ? 'chat' : modelType);
+            const selectId = modelType + '-model';
+            const select = document.getElementById(selectId);
+            if (select) select.value = name;
         }
 
         // Load Stats
@@ -535,7 +603,11 @@
             const input = document.getElementById('chat-input');
             const model = document.getElementById('chat-model').value;
             const text = input.value.trim();
-            if (!text || !model) return;
+            console.log('sendChat called:', { model, text, hasModel: !!model, hasText: !!text });
+            if (!text || !model) {
+                alert('Please enter text and select a model');
+                return;
+            }
             
             addChatMessage('user', text);
             input.value = '';
@@ -545,30 +617,43 @@
             if (system) messages.push({ role: 'system', content: system });
             chatHistory.forEach(m => messages.push({ role: m.role, content: m.content }));
             messages.push({ role: 'user', content: text });
+            console.log('Sending messages:', messages);
             
-            const btn = document.querySelector('#page-chat button:last-child');
-            btn.disabled = true;
+            const btn = document.getElementById('chat-send-btn');
+            if (btn) btn.disabled = true;
             
             try {
+                console.log('Fetching /api/chat with model:', model);
                 const res = await fetch(`${API_BASE}/api/chat`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ model, messages })
                 });
+                console.log('Response status:', res.status);
                 const data = await res.json();
+                console.log('Response data:', data);
+                
+                if (data.error) {
+                    addChatMessage('assistant', 'Error: ' + data.error);
+                    return;
+                }
                 
                 if (data.task_id) {
+                    console.log('Got task_id:', data.task_id, 'polling...');
                     const result = await pollTask(data.task_id);
+                    console.log('Poll result:', result);
                     if (result) {
-                        chatHistory.push({ role: 'user', content: text });
-                        chatHistory.push({ role: 'assistant', content: result.output || result.error });
-                        addChatMessage('assistant', result.output || result.error);
+                        chatHistory.push({ role: 'assistant', content: result.output || result.error || 'No output' });
+                        addChatMessage('assistant', result.output || result.error || 'No output');
                     }
+                } else {
+                    addChatMessage('assistant', 'No task_id returned');
                 }
             } catch (e) {
+                console.error('sendChat error:', e);
                 addChatMessage('assistant', 'Error: ' + e.message);
             }
-            btn.disabled = false;
+            if (btn) btn.disabled = false;
         }
 
         function addChatMessage(role, content) {
@@ -727,9 +812,15 @@
                 try {
                     const res = await fetch(`${API_BASE}/api/tasks/${taskId}`);
                     const task = await res.json();
-                    if (task.state === 'completed') return task.result;
-                    if (task.state === 'failed') return { error: task.result?.error || 'Task failed' };
-                } catch (e) {}
+                    console.log('Poll', i, ':', task.state, typeof task.state, task.result?.output || task.error || '');
+                    if (task.state === 2) {
+                        console.log('Task completed, returning result:', task.result);
+                        return task.result;
+                    }
+                    if (task.state === 3) return { error: task.result?.error || 'Task failed' };
+                } catch (e) {
+                    console.log('Poll error:', e);
+                }
             }
             return { error: 'Timeout' };
         }

@@ -102,6 +102,15 @@ func (h *APIHandler) handleHealth(w http.ResponseWriter, r *http.Request) {
 		Workers:    h.scheduler.GetWorkers(),
 		QueueStats: h.scheduler.GetStats(),
 		Uptime:     int64(time.Since(h.startTime).Seconds()),
+		Backends: BackendStatus{
+			Ollama:      h.manager.IsOllamaAvailable(),
+			LlamaCpp:    h.manager.IsLlamaCppAvailable(),
+			VLLM:        h.manager.IsVLLMAvailable(),
+			HuggingFace: h.manager.IsHuggingFaceAvailable(),
+			SDWebUI:     h.manager.IsSDWebUIAvailable(os.Getenv("SD_WEBUI_URL")),
+			LTXVideo:    h.manager.IsLTXVideoAvailable(),
+		},
+		OllamaModels: h.manager.GetOllamaModelNames(),
 	}
 	jsonResponse(w, http.StatusOK, resp)
 }

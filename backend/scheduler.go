@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"log"
 	"sync"
 	"time"
 )
@@ -265,8 +266,10 @@ func (s *Scheduler) executeTask(st *ScheduledTask) {
 	}
 
 	if result.Error != "" {
+		log.Printf("executeTask: failing with error: %s", result.Error)
 		s.failTask(st, result, start)
 	} else {
+		log.Printf("executeTask: completing with output: %s", result.Output)
 		s.completeTask(st, result, start)
 	}
 }
@@ -292,12 +295,20 @@ func (s *Scheduler) executeOllamaTask(ctx context.Context, st *ScheduledTask, re
 		messages = []Message{{Role: "user", Content: st.Task.Input}}
 	}
 
+	log.Printf("executeOllamaTask: model=%s, messages=%s", st.Task.Model, st.Task.Input)
 	resp, err := ollama.Chat(ctx, st.Task.Model, messages)
+	log.Printf("executeOllamaTask: resp=%+v, err=%v", resp, err)
 	if err != nil {
 		result.Error = fmt.Sprintf("Ollama error: %v", err)
 		return
 	}
 	result.Output = resp.Response
+	log.Printf("executeOllamaTask: output=%s, len=%d", resp.Response, len(resp.Response))
+
+	// Debug: Marshal result to JSON to see what's serialized
+	if debugJSON, err := json.Marshal(result); err == nil {
+		log.Printf("executeOllamaTask: result JSON: %s", string(debugJSON))
+	}
 }
 
 func (s *Scheduler) executeHuggingFaceTask(ctx context.Context, st *ScheduledTask, result *Result) {

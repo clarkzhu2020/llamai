@@ -1,9 +1,13 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
@@ -33,6 +37,8 @@ func NewModelManager(ollamaURL, llamaCppURL, vllmURL, ltxVideoURL string) *Model
 	}
 	mm.registerAllModels()
 	mm.syncWithOllama()
+	mm.syncWithVLLM()
+	mm.syncWithSDWebUI()
 	return mm
 }
 
@@ -54,7 +60,183 @@ func (mm *ModelManager) syncWithOllama() {
 	for _, m := range models {
 		mm.ollamaModels[m.Name] = true
 		log.Printf("  - %s", m.Name)
+
+		// Register actual installed model to mm.models
+		modelType := ModelTypeLLM
+		if hasVisionFamily(m) {
+			modelType = ModelTypeVision
+		}
+
+		mm.mu.Lock()
+		mm.models[m.Name] = &Model{
+			Name:        m.Name,
+			Type:        modelType,
+			Backend:     BackendOllama,
+			Path:        "",
+			VRAMReqMB:   estimateVRAM(m),
+			Description: formatDescription(m),
+		}
+		mm.mu.Unlock()
 	}
+}
+
+func (mm *ModelManager) syncWithVLLM() {
+	if !mm.vllm.IsAvailable() {
+		return
+	}
+
+	models := mm.vllm.ListModels()
+	if len(models) == 0 {
+		return
+	}
+
+	log.Printf("Connected to vLLM - %d models available", len(models))
+	for _, name := range models {
+		mm.mu.Lock()
+		if _, exists := mm.models[name]; !exists {
+			mm.models[name] = &Model{
+				Name:        name,
+				Type:        ModelTypeLLM,
+				Backend:     BackendVLLM,
+				VRAMReqMB:   estimateVLLMVRAM(name),
+				Description: name + " (vLLM)",
+			}
+			log.Printf("  - %s", name)
+		}
+		mm.mu.Unlock()
+	}
+}
+
+func estimateVLLMVRAM(name string) int64 {
+	nameLower := strings.ToLower(name)
+	if strings.Contains(nameLower, "70b") || strings.Contains(nameLower, "72b") {
+		return 16000
+	}
+	if strings.Contains(nameLower, "30b") || strings.Contains(nameLower, "34b") {
+		return 8000
+	}
+	if strings.Contains(nameLower, "13b") {
+		return 8000
+	}
+	return 4000
+}
+
+func (mm *ModelManager) syncWithSDWebUI() {
+	sdURL := os.Getenv("SD_WEBUI_URL")
+	if sdURL == "" {
+		sdURL = "http://localhost:7860"
+	}
+	if !mm.IsSDWebUIAvailable(sdURL) {
+		return
+	}
+
+	client := &http.Client{Timeout: 5 * time.Second}
+	resp, err := client.Get(sdURL + "/sdapi/v1/sd-models")
+	if err != nil {
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return
+	}
+
+	var sdModels []struct {
+		Title string `json:"title"`
+		Name  string `json:"model_name"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&sdModels); err != nil {
+		return
+	}
+
+	if len(sdModels) == 0 {
+		return
+	}
+
+	log.Printf("Connected to SD WebUI - %d models available", len(sdModels))
+	for _, m := range sdModels {
+		mm.mu.Lock()
+		modelName := m.Title
+		if modelName == "" {
+			modelName = m.Name
+		}
+		if _, exists := mm.models[modelName]; !exists {
+			mm.models[modelName] = &Model{
+				Name:        modelName,
+				Type:        ModelTypeImage,
+				Backend:     BackendSDWebUI,
+				Path:        m.Name,
+				VRAMReqMB:   8000,
+				Description: modelName + " (SD WebUI)",
+			}
+			log.Printf("  - %s", modelName)
+		}
+		mm.mu.Unlock()
+	}
+}
+
+func hasVisionFamily(m OllamaModel) bool {
+	if m.Details.Families != nil {
+		visionFamilies := []string{"llava", "clip", "qwen2vl", "qwen2-vl", "llama3.2-vision"}
+		for _, f := range m.Details.Families {
+			for _, vf := range visionFamilies {
+				if strings.Contains(strings.ToLower(f), vf) {
+					return true
+				}
+			}
+		}
+	}
+	return false
+}
+
+func estimateVRAM(m OllamaModel) int64 {
+	if m.Details.ParameterSize != "" {
+		if size, err := parseSizeGB(m.Details.ParameterSize); err == nil {
+			return int64(size * 2) // Rough estimate: 2GB per parameter for FP16
+		}
+	}
+	if m.Size > 0 {
+		return m.Size / (1024 * 1024 * 1024) // Convert bytes to GB, rough estimate
+	}
+	return 4000 // Default 4GB
+}
+
+func parseSizeGB(sizeStr string) (float64, error) {
+	sizeStr = strings.TrimSpace(sizeStr)
+	sizeStr = strings.ReplaceAll(sizeStr, "B", "")
+	sizeStr = strings.ReplaceAll(sizeStr, "b", "")
+
+	multiplier := 1.0
+	if strings.HasSuffix(sizeStr, "K") || strings.HasSuffix(sizeStr, "k") {
+		multiplier = 1024.0
+		sizeStr = strings.TrimSuffix(sizeStr, "K")
+		sizeStr = strings.TrimSuffix(sizeStr, "k")
+	} else if strings.HasSuffix(sizeStr, "M") || strings.HasSuffix(sizeStr, "m") {
+		multiplier = 1024.0 * 1024.0
+		sizeStr = strings.TrimSuffix(sizeStr, "M")
+		sizeStr = strings.TrimSuffix(sizeStr, "m")
+	} else if strings.HasSuffix(sizeStr, "G") || strings.HasSuffix(sizeStr, "g") {
+		multiplier = 1024.0 * 1024.0 * 1024.0
+		sizeStr = strings.TrimSuffix(sizeStr, "G")
+		sizeStr = strings.TrimSuffix(sizeStr, "g")
+	}
+
+	sizeStr = strings.TrimSpace(sizeStr)
+	if size, err := strconv.ParseFloat(sizeStr, 64); err == nil {
+		return size * multiplier / (1024 * 1024 * 1024), nil
+	}
+	return 4.0, fmt.Errorf("failed to parse size")
+}
+
+func formatDescription(m OllamaModel) string {
+	desc := m.Name
+	if m.Details.ParameterSize != "" {
+		desc = m.Details.ParameterSize + " " + desc
+	}
+	if m.Details.QuantizationLevel != "" {
+		desc += " (" + m.Details.QuantizationLevel + ")"
+	}
+	return desc
 }
 
 // registerAllModels registers all available models from all backends
@@ -272,6 +454,17 @@ func (mm *ModelManager) IsModelAvailableInOllama(name string) bool {
 	mm.mu.RLock()
 	defer mm.mu.RUnlock()
 	return mm.ollamaModels[name]
+}
+
+// GetOllamaModelNames returns list of all available Ollama model names
+func (mm *ModelManager) GetOllamaModelNames() []string {
+	mm.mu.RLock()
+	defer mm.mu.RUnlock()
+	names := make([]string, 0, len(mm.ollamaModels))
+	for name := range mm.ollamaModels {
+		names = append(names, name)
+	}
+	return names
 }
 
 // IsHuggingFaceAvailable checks if HuggingFace API is available

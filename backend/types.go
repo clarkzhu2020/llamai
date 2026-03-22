@@ -115,11 +115,23 @@ type QueueStats struct {
 
 // HealthResponse represents system health status
 type HealthResponse struct {
-	Status     string        `json:"status"`
-	GPUs       []GPUInfo     `json:"gpus"`
-	Workers    []*WorkerInfo `json:"workers"`
-	QueueStats QueueStats    `json:"queue_stats"`
-	Uptime     int64         `json:"uptime_seconds"`
+	Status       string        `json:"status"`
+	GPUs         []GPUInfo     `json:"gpus"`
+	Workers      []*WorkerInfo `json:"workers"`
+	QueueStats   QueueStats    `json:"queue_stats"`
+	Uptime       int64         `json:"uptime_seconds"`
+	Backends     BackendStatus `json:"backends"`
+	OllamaModels []string      `json:"ollama_models,omitempty"` // Models actually installed in Ollama
+}
+
+// BackendStatus represents which backends are available
+type BackendStatus struct {
+	Ollama      bool `json:"ollama"`
+	LlamaCpp    bool `json:"llamacpp"`
+	VLLM        bool `json:"vllm"`
+	HuggingFace bool `json:"huggingface"`
+	SDWebUI     bool `json:"sdwebui"`
+	LTXVideo    bool `json:"ltxvideo"`
 }
 
 // GenerateRequest for text/image/audio generation

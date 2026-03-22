@@ -121,6 +121,12 @@ button.secondary {
 .badge-video { background: #43e97b; color: #000; }
 .badge-speech { background: #feca57; color: #000; }
 
+/* Model Items */
+.model-item.available { cursor: pointer; }
+.model-item.available:hover { background: #252540; padding-left: 15px; }
+.model-item.unavailable { opacity: 0.5; cursor: not-allowed; }
+.model-item.unavailable:hover { background: transparent; }
+
 /* Output Area */
 #output {
     background: #1a1a2e;

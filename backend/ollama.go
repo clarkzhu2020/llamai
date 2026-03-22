@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -18,11 +19,15 @@ type OllamaClient struct {
 
 // OllamaResponse represents Ollama API response
 type OllamaResponse struct {
-	Model        string `json:"model"`
-	Response     string `json:"response"`
-	Done         bool   `json:"done"`
+	Model    string `json:"model"`
+	Response string `json:"response"`
+	Message  struct {
+		Role    string `json:"role"`
+		Content string `json:"content"`
+	} `json:"message,omitempty"`
+	Done          bool  `json:"done"`
 	TotalDuration int64 `json:"total_duration,omitempty"`
-	EvalCount    int    `json:"eval_count,omitempty"`
+	EvalCount     int   `json:"eval_count,omitempty"`
 }
 
 // OllamaChatRequest for chat completion
@@ -55,6 +60,15 @@ type OllamaModel struct {
 	Name       string `json:"name"`
 	Size       int64  `json:"size"`
 	ModifiedAt string `json:"modified_at"`
+	Digest     string `json:"digest"`
+	Details    struct {
+		ParentModel       string   `json:"parent_model"`
+		Format            string   `json:"format"`
+		Family            string   `json:"family"`
+		Families          []string `json:"families"`
+		ParameterSize     string   `json:"parameter_size"`
+		QuantizationLevel string   `json:"quantization_level"`
+	} `json:"details"`
 }
 
 // NewOllamaClient creates a new Ollama client
@@ -168,10 +182,33 @@ func (c *OllamaClient) Chat(ctx context.Context, model string, messages []Messag
 		return nil, fmt.Errorf("Ollama returned status %d: %s", resp.StatusCode, string(respBody))
 	}
 
-	var result OllamaResponse
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return nil, fmt.Errorf("failed to decode response: %v", err)
+	// Ollama returns streaming SSE data even with Stream: false
+	// We need to read all lines and use the last complete JSON
+	var lastResult OllamaResponse
+	reader := bufio.NewReader(resp.Body)
+	for {
+		line, err := reader.ReadBytes('\n')
+		if err != nil {
+			break
+		}
+		line = bytes.TrimSpace(line)
+		if len(line) == 0 {
+			continue
+		}
+		var chunk OllamaResponse
+		if err := json.Unmarshal(line, &chunk); err != nil {
+			continue
+		}
+		lastResult = chunk
+		if chunk.Done {
+			break
+		}
 	}
 
-	return &result, nil
+	// Extract content from message.content if response is empty
+	if lastResult.Response == "" && lastResult.Message.Content != "" {
+		lastResult.Response = lastResult.Message.Content
+	}
+
+	return &lastResult, nil
 }
