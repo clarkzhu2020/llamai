@@ -163,15 +163,27 @@ func main() {
 	mux := http.NewServeMux()
 	apiHandler.RegisterRoutes(mux)
 
+	// Setup OpenAI compatible API server
+	openaiPort := getEnv("OPENAI_API_PORT", "8081")
+	openaiServer := NewOpenAICompatServer(modelManager, scheduler, openaiPort)
+
 	// Setup graceful shutdown
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 
-	// Start server
+	// Start OpenAI compatible API server
 	go func() {
-		log.Printf("\n🚀 Server listening on http://localhost:%s", port)
+		if err := openaiServer.Start(); err != nil {
+			log.Printf("⚠️  OpenAI Compatible API failed to start: %v", err)
+		}
+	}()
+
+	// Start main server
+	go func() {
+		log.Printf("\n🚀 LocalMAI Server listening on http://localhost:%s", port)
 		log.Printf("🌐 Web UI: http://localhost:%s", port)
 		log.Printf("📖 API Docs: http://localhost:%s/api/health", port)
+		log.Printf("🔌 OpenAI Compatible API: http://localhost:%s/v1", openaiPort)
 		log.Println("")
 		if err := http.ListenAndServe(":"+port, mux); err != nil {
 			log.Fatalf("Server failed: %v", err)

@@ -9,6 +9,7 @@
 - **分布式架构**: Worker 节点支持分布式任务执行
 - **GPU 调度**: 智能 GPU 内存分配和负载均衡
 - **RESTful API**: 易于与应用集成
+- **OpenAI 兼容 API**: 无缝对接所有 OpenAI 生态应用
 - **Web UI**: 内置可视化界面
 
 ---
@@ -19,7 +20,8 @@
 2. [配置指南](./docs/configuration.md)
 3. [后端集成指南](./docs/)
 4. [API 使用文档](./docs/api.md)
-5. [故障排除](./docs/troubleshooting.md)
+5. [OpenAI 兼容 API](./docs/openai-api.md)
+6. [故障排除](./docs/troubleshooting.md)
 
 ---
 
