@@ -572,8 +572,18 @@ func (h *APIHandler) handleStatic(w http.ResponseWriter, r *http.Request) {
 		path = "/index.html"
 	}
 
-	// Try to serve from embedded files or frontend folder
-	content, err := fs.ReadFile("frontend" + path)
+	// Try to read from actual frontend directory first
+	if data, err := readFrontendFile(path); err == nil {
+		ext := filepath.Ext(path)
+		contentType := getContentType(ext)
+		w.Header().Set("Content-Type", contentType)
+		w.WriteHeader(http.StatusOK)
+		w.Write(data)
+		return
+	}
+
+	// Fallback to embedded filesystem
+	content, err := fs.ReadFile(path)
 	if err != nil {
 		// Fallback to embedded index.html
 		w.Header().Set("Content-Type", "text/html")
@@ -584,21 +594,39 @@ func (h *APIHandler) handleStatic(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ext := filepath.Ext(path)
-	contentType := "text/plain"
-	switch ext {
-	case ".html":
-		contentType = "text/html"
-	case ".js":
-		contentType = "application/javascript"
-	case ".css":
-		contentType = "text/css"
-	case ".json":
-		contentType = "application/json"
-	}
-
+	contentType := getContentType(ext)
 	w.Header().Set("Content-Type", contentType)
 	w.WriteHeader(http.StatusOK)
-	io.WriteString(w, string(content))
+	io.WriteString(w, content)
+}
+
+func readFrontendFile(path string) ([]byte, error) {
+	// Try actual filesystem first
+	filePath := filepath.Join("frontend", path)
+	return os.ReadFile(filePath)
+}
+
+func getContentType(ext string) string {
+	switch ext {
+	case ".html":
+		return "text/html"
+	case ".css":
+		return "text/css"
+	case ".js":
+		return "application/javascript"
+	case ".json":
+		return "application/json"
+	case ".png":
+		return "image/png"
+	case ".jpg", ".jpeg":
+		return "image/jpeg"
+	case ".svg":
+		return "image/svg+xml"
+	case ".woff", ".woff2":
+		return "font/woff2"
+	default:
+		return "text/plain"
+	}
 }
 
 func jsonResponse(w http.ResponseWriter, status int, data any) {

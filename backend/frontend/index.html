@@ -4,84 +4,27 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LocalMAI - Multimodal AI Platform</title>
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f0f23; color: #fff; min-height: 100vh; }
-        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
-        header { text-align: center; padding: 40px 0; border-bottom: 1px solid #333; margin-bottom: 30px; }
-        h1 { font-size: 2.5em; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .subtitle { color: #888; margin-top: 10px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px; }
-        .card { background: #1a1a2e; border-radius: 12px; padding: 20px; border: 1px solid #333; }
-        .card h3 { color: #667eea; margin-bottom: 15px; font-size: 1.2em; }
-        .card p, .card li { color: #ccc; line-height: 1.6; }
-        .card ul { list-style: none; padding-left: 0; max-height: 250px; overflow-y: auto; }
-        .card li { padding: 8px 0; border-bottom: 1px solid #333; cursor: pointer; transition: background 0.2s; }
-        .card li:hover { background: #252540; padding-left: 10px; }
-        .card li:last-child { border-bottom: none; }
-        .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75em; margin-left: 8px; }
-        .badge-llm { background: #667eea; }
-        .badge-vision { background: #764ba2; }
-        .badge-image { background: #f093fb; color: #000; }
-        .badge-audio { background: #4facfe; color: #000; }
-        .badge-video { background: #43e97b; color: #000; }
-        .badge-speech { background: #feca57; color: #000; }
-        .badge-hf { background: #ff6b6b; }
-        .badge-ollama { background: #667eea; }
-        .badge-sd { background: #f093fb; color: #000; }
-        .api-section { margin-top: 30px; background: #1a1a2e; border-radius: 12px; padding: 20px; }
-        .api-section h2 { color: #667eea; margin-bottom: 20px; }
-        .endpoint { background: #0f0f23; padding: 12px 15px; border-radius: 8px; margin: 8px 0; font-family: monospace; font-size: 0.9em; }
-        .method { color: #4facfe; font-weight: bold; margin-right: 10px; }
-        .path { color: #ccc; }
-        button { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; margin: 5px; transition: opacity 0.2s; }
-        button:hover { opacity: 0.8; }
-        button:disabled { opacity: 0.5; cursor: not-allowed; }
-        input, select, textarea { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #333; background: #0f0f23; color: #fff; margin: 5px 0; font-size: 14px; }
-        textarea { min-height: 80px; resize: vertical; font-family: inherit; }
-        #output { background: #0f0f23; padding: 20px; border-radius: 8px; min-height: 100px; white-space: pre-wrap; margin-top: 20px; font-family: monospace; font-size: 13px; max-height: 400px; overflow-y: auto; }
-        .status { display: flex; gap: 20px; margin: 20px 0; flex-wrap: wrap; }
-        .status-item { background: #1a1a2e; padding: 15px 25px; border-radius: 8px; text-align: center; min-width: 120px; }
-        .status-value { font-size: 2em; font-weight: bold; color: #667eea; }
-        .status-label { color: #888; font-size: 0.9em; margin-top: 5px; }
-        .connection-status { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
-        .status-dot { width: 12px; height: 12px; border-radius: 50%; }
-        .status-dot.connected { background: #43e97b; box-shadow: 0 0 10px #43e97b; }
-        .status-dot.disconnected { background: #ff4757; }
-        .setup-box { background: #252540; padding: 20px; border-radius: 8px; margin: 20px 0; }
-        .setup-box h3 { color: #ff6b6b; margin-bottom: 10px; }
-        .setup-box code { background: #0f0f23; padding: 2px 8px; border-radius: 4px; color: #4facfe; }
-        .model-list { max-height: 300px; overflow-y: auto; }
-        .model-item { display: flex; justify-content: space-between; align-items: center; }
-        .model-name { font-weight: 500; }
-        .loading { display: inline-block; width: 20px; height: 20px; border: 2px solid #333; border-top-color: #667eea; border-radius: 50%; animation: spin 1s linear infinite; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        .error { color: #ff4757; }
-        .success { color: #43e97b; }
-        .tabs { display: flex; gap: 5px; margin-bottom: 20px; flex-wrap: wrap; }
-        .tab { padding: 10px 20px; background: #252540; border-radius: 6px; cursor: pointer; transition: background 0.2s; }
-        .tab:hover { background: #333; }
-        .tab.active { background: #667eea; }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
-        .param-row { display: flex; gap: 10px; margin: 10px 0; }
-        .param-row input { flex: 1; }
-        .param-label { color: #888; min-width: 100px; display: flex; align-items: center; }
-        pre { background: #0f0f23; padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85em; }
-        .backend-tag { font-size: 0.7em; opacity: 0.7; }
-    </style>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>LocalMAI</h1>
-            <p class="subtitle">Multimodal AI Platform - Ollama + HuggingFace + Stable Diffusion</p>
+            <div class="logo">
+                <h1>LocalMAI</h1>
+                <div class="connection-status">
+                    <div class="status-dot" id="status-dot"></div>
+                    <span id="status-text">Checking...</span>
+                </div>
+            </div>
+            <nav class="nav">
+                <a href="#" class="active" data-page="chat">Chat</a>
+                <a href="#" data-page="image">Image</a>
+                <a href="#" data-page="audio">Audio</a>
+                <a href="#" data-page="video">Video</a>
+                <a href="#" data-page="models">Models</a>
+                <a href="#" data-page="settings">Settings</a>
+            </nav>
         </header>
-
-        <div class="connection-status">
-            <div class="status-dot" id="ollama-status"></div>
-            <span id="ollama-status-text">Checking connection...</span>
-        </div>
 
         <div class="status">
             <div class="status-item">
@@ -89,466 +32,714 @@
                 <div class="status-label">GPUs</div>
             </div>
             <div class="status-item">
-                <div class="status-value" id="worker-count">0</div>
-                <div class="status-label">Workers</div>
+                <div class="status-value" id="model-count">0</div>
+                <div class="status-label">Models</div>
             </div>
             <div class="status-item">
-                <div class="status-value" id="model-count">0</div>
-                <div class="status-label">Total Models</div>
+                <div class="status-value" id="queue-pending">0</div>
+                <div class="status-label">Pending</div>
+            </div>
+            <div class="status-item">
+                <div class="status-value" id="queue-running">0</div>
+                <div class="status-label">Running</div>
             </div>
         </div>
 
-        <div class="tabs">
-            <div class="tab active" onclick="switchTab('models')">Models</div>
-            <div class="tab" onclick="switchTab('text')">Text Gen</div>
-            <div class="tab" onclick="switchTab('image')">Image Gen</div>
-            <div class="tab" onclick="switchTab('speech')">Speech</div>
-            <div class="tab" onclick="switchTab('video')">Video</div>
-            <div class="tab" onclick="switchTab('api')">API</div>
-        </div>
-
-        <div id="tab-models" class="tab-content active">
-            <div class="grid">
+        <!-- Chat Page -->
+        <div id="page-chat" class="page">
+            <div class="grid-2">
                 <div class="card">
-                    <h3>LLM Models <span class="badge badge-llm" id="llm-count">0</span></h3>
-                    <ul class="model-list" id="llm-models"></ul>
-                </div>
-                <div class="card">
-                    <h3>Vision Models <span class="badge badge-vision" id="vision-count">0</span></h3>
-                    <ul class="model-list" id="vision-models"></ul>
-                </div>
-                <div class="card">
-                    <h3>Image Models <span class="badge badge-image" id="image-count">0</span></h3>
-                    <ul class="model-list" id="image-models"></ul>
-                </div>
-                <div class="card">
-                    <h3>Speech/TTS Models <span class="badge badge-speech" id="speech-count">0</span></h3>
-                    <ul class="model-list" id="speech-models"></ul>
+                    <h2>Chat</h2>
+                    <div class="param-group">
+                        <select id="chat-model"></select>
+                    </div>
+                    <div class="param-row">
+                        <label class="param-label">Temperature:</label>
+                        <input type="range" id="chat-temp" min="0" max="2" step="0.1" value="0.7" style="width:150px">
+                        <span id="chat-temp-val">0.7</span>
+                    </div>
+                    <div class="param-row">
+                        <label class="param-label">Max Tokens:</label>
+                        <input type="number" id="chat-max-tokens" value="2048" min="100" max="8192" style="width:120px">
+                    </div>
+                    <button onclick="clearChat()" class="secondary">Clear Chat</button>
                 </div>
                 <div class="card">
-                    <h3>Video Models <span class="badge badge-video" id="video-count">0</span></h3>
-                    <ul class="model-list" id="video-models"></ul>
+                    <h2>Parameters</h2>
+                    <div class="param-row">
+                        <label class="param-label">System:</label>
+                        <input type="text" id="chat-system" placeholder="You are a helpful assistant...">
+                    </div>
+                    <div class="param-row">
+                        <label class="param-label">Backend:</label>
+                        <select id="chat-backend">
+                            <option value="">Auto-detect</option>
+                            <option value="ollama">Ollama</option>
+                            <option value="llamacpp">Llama.cpp</option>
+                            <option value="vllm">vLLM</option>
+                        </select>
+                    </div>
+                    <div id="backend-status" style="margin-top:10px;color:#888;font-size:0.9em;"></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="chat-container" id="chat-messages">
+                    <div class="chat-message assistant">
+                        <div class="role">Assistant</div>
+                        <div class="content">Hello! How can I help you today?</div>
+                    </div>
+                </div>
+                <div style="display:flex;gap:10px;margin-top:15px;">
+                    <textarea id="chat-input" placeholder="Type your message..." rows="2" onkeydown="handleChatKeydown(event)"></textarea>
+                    <button onclick="sendChat()" style="height:fit-content">Send</button>
                 </div>
             </div>
         </div>
 
-        <div id="tab-text" class="tab-content">
-            <div class="api-section">
-                <h2>Text Generation / Chat</h2>
-                <select id="text-model-select">
-                    <option value="">Select a model...</option>
-                </select>
-                <textarea id="text-prompt" placeholder="Enter your prompt or messages...">Why is the sky blue?</textarea>
-                <div>
-                    <button onclick="generateText()" id="text-btn">Generate</button>
-                    <button onclick="clearOutput()">Clear</button>
+        <!-- Image Page -->
+        <div id="page-image" class="page" style="display:none;">
+            <div class="grid-2">
+                <div class="card">
+                    <h2>Image Generation</h2>
+                    <select id="image-model"></select>
+                    <textarea id="image-prompt" placeholder="A beautiful sunset over the ocean, highly detailed, 8k" rows="3"></textarea>
+                    <textarea id="image-neg-prompt" placeholder="Negative prompt (what to avoid)" rows="2">blurry, low quality, distorted</textarea>
+                </div>
+                <div class="card">
+                    <h2>Parameters</h2>
+                    <div class="param-row">
+                        <label class="param-label">Width:</label>
+                        <input type="number" id="image-width" value="1024" min="256" max="2048" step="64" style="width:100px">
+                        <label class="param-label">Height:</label>
+                        <input type="number" id="image-height" value="1024" min="256" max="2048" step="64" style="width:100px">
+                    </div>
+                    <div class="param-row">
+                        <label class="param-label">Steps:</label>
+                        <input type="number" id="image-steps" value="30" min="1" max="150" style="width:80px">
+                        <label class="param-label">CFG:</label>
+                        <input type="number" id="image-cfg" value="7.5" min="1" max="20" step="0.5" style="width:80px">
+                    </div>
+                    <div class="param-row">
+                        <label class="param-label">Seed:</label>
+                        <input type="number" id="image-seed" value="-1" min="-1" max="9999999999" style="width:150px">
+                        <button onclick="randomSeed()" class="secondary" style="padding:8px 12px;">Random</button>
+                    </div>
+                    <button onclick="generateImage()" id="image-btn" style="margin-top:15px;width:100%;">Generate Image</button>
+                </div>
+            </div>
+            <div class="card">
+                <h2>Preview</h2>
+                <div id="image-output" style="min-height:200px;background:#0f0f23;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#888;">
+                    Generated image will appear here
                 </div>
             </div>
         </div>
 
-        <div id="tab-image" class="tab-content">
-            <div class="api-section">
-                <h2>Image Generation (Text-to-Image)</h2>
-                <select id="image-model-select">
-                    <option value="">Select a model...</option>
-                </select>
-                <textarea id="image-prompt" placeholder="Enter image prompt...">A beautiful sunset over the ocean, digital art, highly detailed</textarea>
-                <div class="param-row">
-                    <span class="param-label">Negative:</span>
-                    <input type="text" id="image-neg-prompt" placeholder="What to avoid..." value="blurry, low quality">
+        <!-- Audio Page -->
+        <div id="page-audio" class="page" style="display:none;">
+            <div class="grid-2">
+                <div class="card">
+                    <h2>Text-to-Speech</h2>
+                    <select id="audio-model"></select>
+                    <textarea id="audio-text" placeholder="Enter text to convert to speech..." rows="5">Hello! This is a test of the text to speech system. How does it sound?</textarea>
+                    <button onclick="generateSpeech()" id="audio-btn" style="margin-top:15px;width:100%;">Generate Speech</button>
                 </div>
-                <div class="param-row">
-                    <span class="param-label">Width:</span>
-                    <input type="number" id="image-width" value="512" min="256" max="1024" style="width:100px">
-                    <span class="param-label">Height:</span>
-                    <input type="number" id="image-height" value="512" min="256" max="1024" style="width:100px">
-                    <span class="param-label">Steps:</span>
-                    <input type="number" id="image-steps" value="30" min="1" max="150" style="width:80px">
-                </div>
-                <div>
-                    <button onclick="generateImage()" id="image-btn">Generate Image</button>
-                    <button onclick="clearOutput()">Clear</button>
+                <div class="card">
+                    <h2>Speech-to-Text</h2>
+                    <select id="transcribe-model"></select>
+                    <div style="border:2px dashed #333;border-radius:8px;padding:40px;text-align:center;margin:15px 0;">
+                        <p style="color:#888;margin-bottom:15px;">Drag and drop audio file or click to upload</p>
+                        <input type="file" id="audio-file" accept="audio/*" style="display:none" onchange="handleAudioFile(event)">
+                        <button onclick="document.getElementById('audio-file').click()" class="secondary">Upload Audio</button>
+                        <p id="audio-file-name" style="margin-top:10px;color:#667eea;"></p>
+                    </div>
+                    <button onclick="transcribeAudio()" id="transcribe-btn" style="width:100%;">Transcribe</button>
                 </div>
             </div>
-        </div>
-
-        <div id="tab-speech" class="tab-content">
-            <div class="api-section">
-                <h2>Text-to-Speech</h2>
-                <select id="speech-model-select">
-                    <option value="">Select a model...</option>
-                </select>
-                <textarea id="speech-text" placeholder="Enter text to convert to speech...">Hello! This is a test of the text to speech system. How does it sound?</textarea>
-                <div>
-                    <button onclick="generateSpeech()" id="speech-btn">Generate Speech</button>
-                    <button onclick="clearOutput()">Clear</button>
+            <div class="card">
+                <h2>Output</h2>
+                <div id="audio-output" style="min-height:100px;background:#0f0f23;border-radius:8px;padding:15px;color:#ccc;">
+                    Audio output will appear here
                 </div>
             </div>
         </div>
 
-        <div id="tab-video" class="tab-content">
-            <div class="api-section">
-                <h2>Video Generation</h2>
-                <select id="video-model-select">
-                    <option value="">Select a model...</option>
-                </select>
-                <textarea id="video-prompt" placeholder="Enter video prompt...">A person walking through a forest, cinematic style</textarea>
-                <p style="color: #888; margin: 10px 0; font-size: 0.9em;">Note: Video generation requires VIDEO_GEN_URL or HF_TOKEN environment</p>
-                <div>
-                    <button onclick="generateVideo()" id="video-btn">Generate Video</button>
-                    <button onclick="clearOutput()">Clear</button>
+        <!-- Video Page -->
+        <div id="page-video" class="page" style="display:none;">
+            <div class="grid-2">
+                <div class="card">
+                    <h2>Video Generation</h2>
+                    <select id="video-model"></select>
+                    <textarea id="video-prompt" placeholder="A person walking through a forest, cinematic style, 8k" rows="3"></textarea>
+                    <div class="param-row">
+                        <label class="param-label">Frames:</label>
+                        <input type="number" id="video-frames" value="33" min="9" max="129" step="8" style="width:100px">
+                    </div>
+                    <div class="param-row">
+                        <label class="param-label">Width:</label>
+                        <input type="number" id="video-width" value="768" min="256" max="1280" step="32" style="width:100px">
+                        <label class="param-label">Height:</label>
+                        <input type="number" id="video-height" value="512" min="256" max="960" step="32" style="width:100px">
+                    </div>
+                    <button onclick="generateVideo()" id="video-btn" style="margin-top:15px;width:100%;">Generate Video</button>
+                </div>
+                <div class="card">
+                    <h2>Image-to-Video</h2>
+                    <select id="img2video-model"></select>
+                    <div style="border:2px dashed #333;border-radius:8px;padding:40px;text-align:center;margin:15px 0;">
+                        <p style="color:#888;margin-bottom:15px;">Upload base image</p>
+                        <input type="file" id="video-image" accept="image/*" style="display:none" onchange="handleVideoImage(event)">
+                        <button onclick="document.getElementById('video-image').click()" class="secondary">Upload Image</button>
+                        <img id="video-image-preview" style="max-width:200px;margin-top:15px;border-radius:8px;display:none;">
+                    </div>
+                    <textarea id="img2video-prompt" placeholder="Motion description..." rows="2"></textarea>
+                    <button onclick="generateImg2Video()" id="img2video-btn" style="margin-top:15px;width:100%;">Generate</button>
+                </div>
+            </div>
+            <div class="card">
+                <h2>Preview</h2>
+                <div id="video-output" style="min-height:200px;background:#0f0f23;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#888;">
+                    Generated video will appear here
                 </div>
             </div>
         </div>
 
-        <div id="tab-api" class="tab-content">
-            <div class="api-section">
-                <h2>API Endpoints</h2>
-                <div class="endpoint"><span class="method">GET</span> <span class="path">/api/health</span> - System health</div>
-                <div class="endpoint"><span class="method">GET</span> <span class="path">/api/models</span> - List all models</div>
-                <div class="endpoint"><span class="method">GET</span> <span class="path">/api/models?type=llm</span> - Filter by type</div>
-                <div class="endpoint"><span class="method">POST</span> <span class="path">/api/generate</span> - Generate text</div>
-                <div class="endpoint"><span class="method">POST</span> <span class="path">/api/chat</span> - Chat completion</div>
-                <div class="endpoint"><span class="method">POST</span> <span class="path">/api/image/generate</span> - Generate image</div>
-                <div class="endpoint"><span class="method">POST</span> <span class="path">/api/speech/generate</span> - Text to speech</div>
-                <div class="endpoint"><span class="method">POST</span> <span class="path">/api/video/generate</span> - Generate video</div>
-                <div class="endpoint"><span class="method">GET</span> <span class="path">/api/gpus</span> - GPU info</div>
-                <div class="endpoint"><span class="method">GET</span> <span class="path">/api/queue/stats</span> - Queue stats</div>
+        <!-- Models Page -->
+        <div id="page-models" class="page" style="display:none;">
+            <div class="status">
+                <div class="status-item">
+                    <div class="status-value" id="llm-count">0</div>
+                    <div class="status-label">LLM</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-value" id="vision-count">0</div>
+                    <div class="status-label">Vision</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-value" id="image-count">0</div>
+                    <div class="status-label">Image</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-value" id="speech-count">0</div>
+                    <div class="status-label">Speech</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-value" id="video-count">0</div>
+                    <div class="status-label">Video</div>
+                </div>
             </div>
 
-            <div class="api-section">
-                <h2>Example: Generate Image</h2>
-                <pre>curl -X POST http://localhost:8080/api/image/generate \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "stabilityai/stable-diffusion-xl-base-1.0",
-    "prompt": "A beautiful landscape",
-    "width": 512,
-    "height": 512,
-    "steps": 30
-  }'</pre>
-            </div>
-
-            <div class="api-section">
-                <h2>Example: Text to Speech</h2>
-                <pre>curl -X POST http://localhost:8080/api/speech/generate \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "suno/bark",
-    "text": "Hello, this is a test of text to speech."
-  }'</pre>
+            <div class="grid-2">
+                <div class="card">
+                    <h3>LLM Models <span class="badge badge-llm" id="llm-badge">0</span></h3>
+                    <div class="model-list" id="llm-models"></div>
+                </div>
+                <div class="card">
+                    <h3>Vision Models <span class="badge badge-vision" id="vision-badge">0</span></h3>
+                    <div class="model-list" id="vision-models"></div>
+                </div>
+                <div class="card">
+                    <h3>Image Models <span class="badge badge-image" id="image-badge">0</span></h3>
+                    <div class="model-list" id="image-models"></div>
+                </div>
+                <div class="card">
+                    <h3>Speech Models <span class="badge badge-speech" id="speech-badge">0</span></h3>
+                    <div class="model-list" id="speech-models"></div>
+                </div>
+                <div class="card">
+                    <h3>Video Models <span class="badge badge-video" id="video-badge">0</span></h3>
+                    <div class="model-list" id="video-models"></div>
+                </div>
             </div>
         </div>
 
-        <div id="output">Output will appear here...</div>
+        <!-- Settings Page -->
+        <div id="page-settings" class="page" style="display:none;">
+            <div class="grid-2">
+                <div class="card">
+                    <h2>Default Models</h2>
+                    <div class="setting-item">
+                        <label>Chat Model:</label>
+                        <select id="setting-chat-model"></select>
+                    </div>
+                    <div class="setting-item">
+                        <label>Image Model:</label>
+                        <select id="setting-image-model"></select>
+                    </div>
+                    <div class="setting-item">
+                        <label>Speech Model:</label>
+                        <select id="setting-speech-model"></select>
+                    </div>
+                    <div class="setting-item">
+                        <label>Video Model:</label>
+                        <select id="setting-video-model"></select>
+                    </div>
+                    <button onclick="saveSettings()" style="margin-top:20px;">Save Settings</button>
+                </div>
+                <div class="card">
+                    <h2>Generation Defaults</h2>
+                    <div class="setting-item">
+                        <label>Image Width:</label>
+                        <input type="number" id="setting-img-width" value="1024" min="256" max="2048">
+                    </div>
+                    <div class="setting-item">
+                        <label>Image Height:</label>
+                        <input type="number" id="setting-img-height" value="1024" min="256" max="2048">
+                    </div>
+                    <div class="setting-item">
+                        <label>Image Steps:</label>
+                        <input type="number" id="setting-img-steps" value="30" min="1" max="150">
+                    </div>
+                    <div class="setting-item">
+                        <label>Temperature:</label>
+                        <input type="number" id="setting-temp" value="0.7" min="0" max="2" step="0.1">
+                    </div>
+                    <div class="setting-item">
+                        <label>Max Tokens:</label>
+                        <input type="number" id="setting-max-tokens" value="2048" min="100" max="8192">
+                    </div>
+                    <button onclick="saveSettings()" style="margin-top:20px;">Save Settings</button>
+                </div>
+            </div>
+            <div class="card">
+                <h2>API Configuration</h2>
+                <div class="setting-item">
+                    <label>API Port:</label>
+                    <input type="number" id="setting-api-port" value="8080">
+                </div>
+                <div class="setting-item">
+                    <label>OpenAI API Port:</label>
+                    <input type="number" id="setting-openai-port" value="8081">
+                </div>
+                <button onclick="saveSettings()" style="margin-top:20px;">Save Settings</button>
+            </div>
+            <div class="card">
+                <h2>About</h2>
+                <p><strong>LocalMAI</strong> - Multimodal AI Platform</p>
+                <p style="color:#888;margin-top:10px;">Supports: Ollama, Llama.cpp, vLLM, HuggingFace, Stable Diffusion WebUI, LTX-Video</p>
+                <p style="color:#888;margin-top:5px;">OpenAI Compatible API available at port 8081</p>
+            </div>
+        </div>
     </div>
+
+    <div id="output" style="display:none;"></div>
+
+    <footer>
+        <p>LocalMAI - Multimodal AI Platform | <a href="/api/health" style="color:#667eea;">API Health</a> | <a href="/v1/models" style="color:#667eea;">OpenAI API</a></p>
+    </footer>
 
     <script>
         const API_BASE = window.location.origin;
         let allModels = [];
+        let chatHistory = [];
+        let currentSettings = {};
 
-        function switchTab(tab) {
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-            event.target.classList.add('active');
-            document.getElementById('tab-' + tab).classList.add('active');
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            initNavigation();
+            loadModels();
+            loadStats();
+            loadSettings();
+            setInterval(loadStats, 5000);
+        });
+
+        // Navigation
+        function initNavigation() {
+            document.querySelectorAll('.nav a').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    switchPage(link.dataset.page);
+                });
+            });
         }
 
-        async function loadStats() {
-            try {
-                const res = await fetch(API_BASE + '/api/health');
-                const data = await res.json();
-                document.getElementById('gpu-count').textContent = data.gpus?.length || 0;
-                document.getElementById('worker-count').textContent = data.workers?.length || 0;
-                updateConnectionStatus(data);
-            } catch (e) {
-                document.getElementById('ollama-status').className = 'status-dot disconnected';
-                document.getElementById('ollama-status-text').textContent = 'Backend not connected';
-            }
+        function switchPage(page) {
+            document.querySelectorAll('.nav a').forEach(l => l.classList.remove('active'));
+            document.querySelector(`[data-page="${page}"]`).classList.add('active');
+            document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
+            document.getElementById(`page-${page}`).style.display = 'block';
         }
 
-        function updateConnectionStatus(data) {
-            const statusDot = document.getElementById('ollama-status');
-            const statusText = document.getElementById('ollama-status-text');
-            if (data.gpus && data.gpus.length > 0) {
-                statusDot.className = 'status-dot connected';
-                statusText.textContent = 'System Online - ' + data.gpus.length + ' GPU(s)';
-            } else {
-                statusDot.className = 'status-dot connected';
-                statusText.textContent = 'System Online (simulated GPU)';
-            }
-        }
-
+        // Load Models
         async function loadModels() {
             try {
-                const res = await fetch(API_BASE + '/api/models');
+                const res = await fetch(`${API_BASE}/api/models`);
                 const data = await res.json();
                 allModels = data.models || [];
+                
+                const llm = allModels.filter(m => m.type === 'llm');
+                const vision = allModels.filter(m => m.type === 'vision');
+                const image = allModels.filter(m => m.type === 'image');
+                const speech = allModels.filter(m => m.type === 'speech');
+                const video = allModels.filter(m => m.type === 'video');
+                
+                updateModelSelect('chat-model', [...llm, ...vision]);
+                updateModelSelect('image-model', image);
+                updateModelSelect('audio-model', speech);
+                updateModelSelect('transcribe-model', speech);
+                updateModelSelect('video-model', video);
+                updateModelSelect('img2video-model', video);
+                updateModelSelect('setting-chat-model', [...llm, ...vision]);
+                updateModelSelect('setting-image-model', image);
+                updateModelSelect('setting-speech-model', speech);
+                updateModelSelect('setting-video-model', video);
+                
+                document.getElementById('llm-count').textContent = llm.length;
+                document.getElementById('vision-count').textContent = vision.length;
+                document.getElementById('image-count').textContent = image.length;
+                document.getElementById('speech-count').textContent = speech.length;
+                document.getElementById('video-count').textContent = video.length;
+                document.getElementById('llm-badge').textContent = llm.length;
+                document.getElementById('vision-badge').textContent = vision.length;
+                document.getElementById('image-badge').textContent = image.length;
+                document.getElementById('speech-badge').textContent = speech.length;
+                document.getElementById('video-badge').textContent = video.length;
                 document.getElementById('model-count').textContent = allModels.length;
-
-                // Group by type
-                const llmModels = allModels.filter(m => m.type === 'llm');
-                const visionModels = allModels.filter(m => m.type === 'vision');
-                const imageModels = allModels.filter(m => m.type === 'image');
-                const speechModels = allModels.filter(m => m.type === 'speech');
-                const videoModels = allModels.filter(m => m.type === 'video');
-
-                // Update counts
-                document.getElementById('llm-count').textContent = llmModels.length;
-                document.getElementById('vision-count').textContent = visionModels.length;
-                document.getElementById('image-count').textContent = imageModels.length;
-                document.getElementById('speech-count').textContent = speechModels.length;
-                document.getElementById('video-count').textContent = videoModels.length;
-
-                // Render model lists
-                document.getElementById('llm-models').innerHTML = renderModels(llmModels);
-                document.getElementById('vision-models').innerHTML = renderModels(visionModels);
-                document.getElementById('image-models').innerHTML = renderModels(imageModels);
-                document.getElementById('speech-models').innerHTML = renderModels(speechModels);
-                document.getElementById('video-models').innerHTML = renderModels(videoModels);
-
-                // Update dropdowns
-                updateSelect('text-model-select', llmModels);
-                updateSelect('image-model-select', imageModels);
-                updateSelect('speech-model-select', speechModels);
-                updateSelect('video-model-select', videoModels);
+                
+                renderModelList('llm-models', llm);
+                renderModelList('vision-models', vision);
+                renderModelList('image-models', image);
+                renderModelList('speech-models', speech);
+                renderModelList('video-models', video);
+                
+                if (llm.length > 0 && !document.getElementById('chat-model').value) {
+                    document.getElementById('chat-model').value = llm[0].name;
+                }
+                if (image.length > 0 && !document.getElementById('image-model').value) {
+                    document.getElementById('image-model').value = image[0].name;
+                }
             } catch (e) {
                 console.error('Failed to load models:', e);
             }
         }
 
-        function renderModels(models) {
-            if (models.length === 0) {
-                return '<li>No models available</li>';
-            }
-            return models.map(m => {
-                const badge = getBadgeForType(m.type);
-                const backendBadge = getBackendBadge(m.backend);
-                return `<li onclick="selectModel('${m.name}', '${m.type}')">
-                    <span class="model-name">${m.name}</span>
-                    <span>${badge} ${backendBadge}</span>
-                </li>`;
-            }).join('');
-        }
-
-        function getBadgeForType(type) {
-            switch(type) {
-                case 'llm': return '<span class="badge badge-llm">LLM</span>';
-                case 'vision': return '<span class="badge badge-vision">Vision</span>';
-                case 'image': return '<span class="badge badge-image">Image</span>';
-                case 'speech': return '<span class="badge badge-speech">Speech</span>';
-                case 'video': return '<span class="badge badge-video">Video</span>';
-                default: return '';
-            }
-        }
-
-        function getBackendBadge(backend) {
-            switch(backend) {
-                case 'ollama': return '<span class="badge badge-ollama backend-tag">Ollama</span>';
-                case 'huggingface': return '<span class="badge badge-hf backend-tag">HF</span>';
-                case 'sd_webui': return '<span class="badge badge-sd backend-tag">SD</span>';
-                default: return '';
-            }
-        }
-
-        function updateSelect(id, models) {
+        function updateModelSelect(id, models) {
             const select = document.getElementById(id);
-            select.innerHTML = '<option value="">Select a model...</option>' +
-                models.map(m => `<option value="${m.name}">${m.name}</option>`).join('');
+            select.innerHTML = models.map(m => `<option value="${m.name}">${m.name} (${m.backend})</option>`).join('');
         }
 
-        function selectModel(name, type) {
-            switch(type) {
-                case 'llm':
-                case 'vision':
-                    document.getElementById('text-model-select').value = name;
-                    switchTab('text');
-                    break;
-                case 'image':
-                    document.getElementById('image-model-select').value = name;
-                    switchTab('image');
-                    break;
-                case 'speech':
-                    document.getElementById('speech-model-select').value = name;
-                    switchTab('speech');
-                    break;
-                case 'video':
-                    document.getElementById('video-model-select').value = name;
-                    switchTab('video');
-                    break;
-            }
-        }
-
-        async function generateText() {
-            const model = document.getElementById('text-model-select').value;
-            const prompt = document.getElementById('text-prompt').value;
-            const output = document.getElementById('output');
-            const btn = document.getElementById('text-btn');
-
-            if (!model) {
-                output.innerHTML = '<span class="error">Please select a model first</span>';
+        function renderModelList(id, models) {
+            const el = document.getElementById(id);
+            if (models.length === 0) {
+                el.innerHTML = '<div class="model-item"><span style="color:#888">No models available</span></div>';
                 return;
             }
+            el.innerHTML = models.map(m => `
+                <div class="model-item" onclick="useModel('${m.type}', '${m.name}')">
+                    <span>${m.name}</span>
+                    <span class="badge badge-${getBadgeType(m.type)}">${m.type}</span>
+                </div>
+            `).join('');
+        }
 
-            output.innerHTML = '<span class="loading"></span> Generating text...';
-            btn.disabled = true;
+        function getBadgeType(type) {
+            const map = { llm: 'llm', vision: 'vision', image: 'image', speech: 'audio', video: 'video' };
+            return map[type] || 'llm';
+        }
 
+        function useModel(type, name) {
+            switchPage(type === 'vision' ? 'chat' : type);
+            document.getElementById(`${type}-model`).value = name;
+        }
+
+        // Load Stats
+        async function loadStats() {
             try {
-                const res = await fetch(API_BASE + '/api/generate', {
+                const res = await fetch(`${API_BASE}/api/health`);
+                const data = await res.json();
+                
+                document.getElementById('gpu-count').textContent = data.gpus?.length || 0;
+                document.getElementById('queue-pending').textContent = data.queue_stats?.pending || 0;
+                document.getElementById('queue-running').textContent = data.queue_stats?.running || 0;
+                
+                const dot = document.getElementById('status-dot');
+                const text = document.getElementById('status-text');
+                if (data.gpus?.length > 0) {
+                    dot.className = 'status-dot connected';
+                    text.textContent = 'System Online';
+                } else {
+                    dot.className = 'status-dot connected';
+                    text.textContent = 'System Online (simulated)';
+                }
+            } catch (e) {
+                document.getElementById('status-dot').className = 'status-dot disconnected';
+                document.getElementById('status-text').textContent = 'Backend Offline';
+            }
+        }
+
+        // Settings
+        function loadSettings() {
+            const defaults = {
+                chatModel: 'llama3',
+                imageModel: 'stabilityai/stable-diffusion-xl-base-1.0',
+                speechModel: 'suno/bark',
+                videoModel: 'zeroscope_v2_576w',
+                imgWidth: 1024,
+                imgHeight: 1024,
+                imgSteps: 30,
+                temperature: 0.7,
+                maxTokens: 2048
+            };
+            
+            currentSettings = { ...defaults, ...JSON.parse(localStorage.getItem('localmai-settings') || '{}') };
+            
+            document.getElementById('setting-chat-model').value = currentSettings.chatModel || '';
+            document.getElementById('setting-image-model').value = currentSettings.imageModel || '';
+            document.getElementById('setting-speech-model').value = currentSettings.speechModel || '';
+            document.getElementById('setting-video-model').value = currentSettings.videoModel || '';
+            document.getElementById('setting-img-width').value = currentSettings.imgWidth || 1024;
+            document.getElementById('setting-img-height').value = currentSettings.imgHeight || 1024;
+            document.getElementById('setting-img-steps').value = currentSettings.imgSteps || 30;
+            document.getElementById('setting-temp').value = currentSettings.temperature || 0.7;
+            document.getElementById('setting-max-tokens').value = currentSettings.maxTokens || 2048;
+        }
+
+        function saveSettings() {
+            currentSettings = {
+                chatModel: document.getElementById('setting-chat-model').value,
+                imageModel: document.getElementById('setting-image-model').value,
+                speechModel: document.getElementById('setting-speech-model').value,
+                videoModel: document.getElementById('setting-video-model').value,
+                imgWidth: parseInt(document.getElementById('setting-img-width').value),
+                imgHeight: parseInt(document.getElementById('setting-img-height').value),
+                imgSteps: parseInt(document.getElementById('setting-img-steps').value),
+                temperature: parseFloat(document.getElementById('setting-temp').value),
+                maxTokens: parseInt(document.getElementById('setting-max-tokens').value)
+            };
+            localStorage.setItem('localmai-settings', JSON.stringify(currentSettings));
+            showNotification('Settings saved!');
+        }
+
+        function showNotification(msg) {
+            const notif = document.createElement('div');
+            notif.style.cssText = 'position:fixed;bottom:20px;right:20px;background:#43e97b;color:#000;padding:15px 25px;border-radius:8px;font-weight:500;z-index:1000;animation:fadeIn 0.3s';
+            notif.textContent = msg;
+            document.body.appendChild(notif);
+            setTimeout(() => notif.remove(), 3000);
+        }
+
+        // Chat
+        document.getElementById('chat-temp').addEventListener('input', (e) => {
+            document.getElementById('chat-temp-val').textContent = e.target.value;
+        });
+
+        function handleChatKeydown(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendChat();
+            }
+        }
+
+        async function sendChat() {
+            const input = document.getElementById('chat-input');
+            const model = document.getElementById('chat-model').value;
+            const text = input.value.trim();
+            if (!text || !model) return;
+            
+            addChatMessage('user', text);
+            input.value = '';
+            
+            const system = document.getElementById('chat-system').value;
+            const messages = [];
+            if (system) messages.push({ role: 'system', content: system });
+            chatHistory.forEach(m => messages.push({ role: m.role, content: m.content }));
+            messages.push({ role: 'user', content: text });
+            
+            const btn = document.querySelector('#page-chat button:last-child');
+            btn.disabled = true;
+            
+            try {
+                const res = await fetch(`${API_BASE}/api/chat`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ model, prompt })
+                    body: JSON.stringify({ model, messages })
                 });
                 const data = await res.json();
-                handleTaskResponse(data, output, btn);
+                
+                if (data.task_id) {
+                    const result = await pollTask(data.task_id);
+                    if (result) {
+                        chatHistory.push({ role: 'user', content: text });
+                        chatHistory.push({ role: 'assistant', content: result.output || result.error });
+                        addChatMessage('assistant', result.output || result.error);
+                    }
+                }
             } catch (e) {
-                output.innerHTML = '<span class="error">Error: ' + e.message + '</span>';
-                btn.disabled = false;
+                addChatMessage('assistant', 'Error: ' + e.message);
             }
+            btn.disabled = false;
+        }
+
+        function addChatMessage(role, content) {
+            const container = document.getElementById('chat-messages');
+            const div = document.createElement('div');
+            div.className = `chat-message ${role}`;
+            div.innerHTML = `<div class="role">${role === 'user' ? 'You' : 'Assistant'}</div><div class="content">${escapeHtml(content)}</div>`;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function clearChat() {
+            chatHistory = [];
+            document.getElementById('chat-messages').innerHTML = `
+                <div class="chat-message assistant">
+                    <div class="role">Assistant</div>
+                    <div class="content">Chat cleared. How can I help you?</div>
+                </div>`;
+        }
+
+        // Image Generation
+        function randomSeed() {
+            document.getElementById('image-seed').value = Math.floor(Math.random() * 999999999);
         }
 
         async function generateImage() {
-            const model = document.getElementById('image-model-select').value;
+            const model = document.getElementById('image-model').value;
             const prompt = document.getElementById('image-prompt').value;
             const negPrompt = document.getElementById('image-neg-prompt').value;
-            const width = parseInt(document.getElementById('image-width').value) || 512;
-            const height = parseInt(document.getElementById('image-height').value) || 512;
-            const steps = parseInt(document.getElementById('image-steps').value) || 30;
-            const output = document.getElementById('output');
-            const btn = document.getElementById('image-btn');
-
-            if (!model) {
-                output.innerHTML = '<span class="error">Please select a model first</span>';
-                return;
-            }
-
-            output.innerHTML = '<span class="loading"></span> Generating image...';
-            btn.disabled = true;
-
+            const width = parseInt(document.getElementById('image-width').value);
+            const height = parseInt(document.getElementById('image-height').value);
+            const steps = parseInt(document.getElementById('image-steps').value);
+            const cfg = parseFloat(document.getElementById('image-cfg').value);
+            const seed = parseInt(document.getElementById('image-seed').value);
+            
+            const output = document.getElementById('image-output');
+            output.innerHTML = '<div class="loading"></div> Generating...';
+            
             try {
-                const res = await fetch(API_BASE + '/api/image/generate', {
+                const res = await fetch(`${API_BASE}/api/image/generate`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        model,
-                        prompt,
-                        negative_prompt: negPrompt,
-                        width,
-                        height,
-                        steps
+                        model, prompt, negative_prompt: negPrompt, width, height, steps, cfg_scale: cfg, seed
                     })
                 });
                 const data = await res.json();
-                handleTaskResponse(data, output, btn);
+                
+                if (data.task_id) {
+                    const result = await pollTask(data.task_id);
+                    if (result && result.output_data) {
+                        output.innerHTML = `<img src="data:${result.content_type};base64,${result.output_data}" class="image-preview">`;
+                    } else if (result?.error) {
+                        output.innerHTML = `<span class="error">${result.error}</span>`;
+                    }
+                }
             } catch (e) {
-                output.innerHTML = '<span class="error">Error: ' + e.message + '</span>';
-                btn.disabled = false;
+                output.innerHTML = `<span class="error">Error: ${e.message}</span>`;
             }
         }
 
+        // Audio Generation
         async function generateSpeech() {
-            const model = document.getElementById('speech-model-select').value;
-            const text = document.getElementById('speech-text').value;
-            const output = document.getElementById('output');
-            const btn = document.getElementById('speech-btn');
-
-            if (!model) {
-                output.innerHTML = '<span class="error">Please select a model first</span>';
-                return;
-            }
-
-            output.innerHTML = '<span class="loading"></span> Generating speech...';
-            btn.disabled = true;
-
+            const model = document.getElementById('audio-model').value;
+            const text = document.getElementById('audio-text').value;
+            const output = document.getElementById('audio-output');
+            
+            output.innerHTML = '<div class="loading"></div> Generating speech...';
+            
             try {
-                const res = await fetch(API_BASE + '/api/speech/generate', {
+                const res = await fetch(`${API_BASE}/api/speech/generate`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ model, text })
                 });
                 const data = await res.json();
-                handleTaskResponse(data, output, btn);
+                
+                if (data.task_id) {
+                    const result = await pollTask(data.task_id);
+                    if (result && result.output_data) {
+                        output.innerHTML = `<audio controls src="data:${result.content_type};base64,${result.output_data}"></audio>`;
+                    } else if (result?.output) {
+                        output.innerHTML = result.output;
+                    }
+                }
             } catch (e) {
-                output.innerHTML = '<span class="error">Error: ' + e.message + '</span>';
-                btn.disabled = false;
+                output.innerHTML = `<span class="error">Error: ${e.message}</span>`;
+            }
+        }
+
+        function handleAudioFile(event) {
+            const file = event.target.files[0];
+            if (file) {
+                document.getElementById('audio-file-name').textContent = file.name;
+            }
+        }
+
+        async function transcribeAudio() {
+            const output = document.getElementById('audio-output');
+            output.innerHTML = '<div class="loading"></div> Transcribing... (File upload not yet implemented)';
+        }
+
+        // Video Generation
+        function handleVideoImage(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    document.getElementById('video-image-preview').src = e.target.result;
+                    document.getElementById('video-image-preview').style.display = 'block';
+                };
+                reader.readAsDataURL(file);
             }
         }
 
         async function generateVideo() {
-            const model = document.getElementById('video-model-select').value;
+            const model = document.getElementById('video-model').value;
             const prompt = document.getElementById('video-prompt').value;
-            const output = document.getElementById('output');
-            const btn = document.getElementById('video-btn');
-
-            if (!model) {
-                output.innerHTML = '<span class="error">Please select a model first</span>';
-                return;
-            }
-
-            output.innerHTML = '<span class="loading"></span> Generating video...';
-            btn.disabled = true;
-
+            const width = parseInt(document.getElementById('video-width').value);
+            const height = parseInt(document.getElementById('video-height').value);
+            const frames = parseInt(document.getElementById('video-frames').value);
+            const output = document.getElementById('video-output');
+            
+            output.innerHTML = '<div class="loading"></div> Generating video...';
+            
             try {
-                const res = await fetch(API_BASE + '/api/video/generate', {
+                const res = await fetch(`${API_BASE}/api/video/generate`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ model, prompt })
+                    body: JSON.stringify({ model, prompt, width, height, num_frames: frames })
                 });
                 const data = await res.json();
-                handleTaskResponse(data, output, btn);
+                
+                if (data.task_id) {
+                    const result = await pollTask(data.task_id);
+                    if (result?.output_path) {
+                        output.innerHTML = `<video controls style="width:100%;border-radius:8px;"><source src="${result.output_path}" type="video/mp4"></video>`;
+                    } else if (result?.error) {
+                        output.innerHTML = `<span class="error">${result.error}</span>`;
+                    }
+                }
             } catch (e) {
-                output.innerHTML = '<span class="error">Error: ' + e.message + '</span>';
-                btn.disabled = false;
+                output.innerHTML = `<span class="error">Error: ${e.message}</span>`;
             }
         }
 
-        function handleTaskResponse(data, output, btn) {
-            if (data.task_id) {
-                output.innerHTML = 'Task queued: ' + data.task_id + '<br>Waiting for result...';
-                pollResult(data.task_id, output, btn);
-            } else if (data.error) {
-                output.innerHTML = '<span class="error">Error: ' + data.error + '</span>';
-                if (btn) btn.disabled = false;
-            }
+        async function generateImg2Video() {
+            const output = document.getElementById('video-output');
+            output.innerHTML = '<div class="loading"></div> Image-to-Video generation...';
         }
 
-        async function pollResult(taskId, output, btn) {
-            for (let i = 0; i < 120; i++) {
+        // Poll Task
+        async function pollTask(taskId) {
+            for (let i = 0; i < 300; i++) {
                 await new Promise(r => setTimeout(r, 1000));
                 try {
-                    const res = await fetch(API_BASE + '/api/tasks/' + taskId);
+                    const res = await fetch(`${API_BASE}/api/tasks/${taskId}`);
                     const task = await res.json();
-                    if (task.state === 'completed') {
-                        const result = task.result || {};
-                        let outputText = '<span class="success">✓ Complete</span>\n\n';
-                        if (result.output) outputText += result.output + '\n';
-                        if (result.output_path) outputText += '\nSaved to: ' + result.output_path;
-                        if (result.output_data && result.content_type?.startsWith('image/')) {
-                            outputText += '\n\n<img src="data:' + result.content_type + ';base64,' + result.output_data + '" style="max-width: 100%; border-radius: 8px; margin-top: 10px;">';
-                        }
-                        output.innerHTML = outputText;
-                        if (btn) btn.disabled = false;
-                        return;
-                    } else if (task.state === 'failed') {
-                        const result = task.result || {};
-                        output.innerHTML = '<span class="error">✗ Failed</span>\n\n' + (result.error || 'Unknown error');
-                        if (btn) btn.disabled = false;
-                        return;
-                    }
+                    if (task.state === 'completed') return task.result;
+                    if (task.state === 'failed') return { error: task.result?.error || 'Task failed' };
                 } catch (e) {}
             }
-            output.innerHTML += '\n\n<span class="error">Timed out waiting for result</span>';
-            if (btn) btn.disabled = false;
+            return { error: 'Timeout' };
         }
 
-        function clearOutput() {
-            document.getElementById('output').textContent = 'Output will appear here...';
+        // Utils
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
         }
-
-        // Initialize
-        loadStats();
-        loadModels();
-        setInterval(loadStats, 5000);
     </script>
 </body>
 </html>
