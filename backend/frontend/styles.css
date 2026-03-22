@@ -187,7 +187,17 @@ button.secondary {
 .param-group input, .param-group select { width: auto; min-width: 100px; }
 
 /* Chat Messages */
-.chat-container { display: flex; flex-direction: column; gap: 15px; }
+.chat-container { 
+    display: flex; 
+    flex-direction: column; 
+    gap: 15px;
+    max-height: 400px;
+    overflow-y: auto;
+    padding-right: 10px;
+}
+.chat-container::-webkit-scrollbar { width: 6px; }
+.chat-container::-webkit-scrollbar-track { background: #1a1a2e; border-radius: 3px; }
+.chat-container::-webkit-scrollbar-thumb { background: #667eea; border-radius: 3px; }
 .chat-message {
     padding: 15px;
     border-radius: 12px;

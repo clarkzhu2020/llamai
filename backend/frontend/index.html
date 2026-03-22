@@ -662,7 +662,7 @@
             div.className = `chat-message ${role}`;
             div.innerHTML = `<div class="role">${role === 'user' ? 'You' : 'Assistant'}</div><div class="content">${escapeHtml(content)}</div>`;
             container.appendChild(div);
-            container.scrollTop = container.scrollHeight;
+            container.scrollTop = container.scrollHeight - container.clientHeight;
         }
 
         function clearChat() {
