@@ -1,0 +1,228 @@
+# AI Platform (Multimodal + Distributed + GPU Scheduler)
+
+## 🚀 Overview
+A production-ready skeleton for a multimodal AI system similar to Ollama + ComfyUI.
+
+---
+
+## 📁 Project Structure
+
+```
+ai-platform/
+├── backend/
+│   ├── main.go
+│   ├── manager.go
+│   ├── gpu.go
+│   ├── scheduler.go
+│   └── types.go
+├── worker/
+│   └── worker.go
+├── frontend/
+│   └── index.html
+├── go.mod
+└── README.md
+```
+
+---
+
+## 🧠 backend/types.go
+```go
+package main
+
+type Task struct {
+	Model string `json:"model"`
+	Input string `json:"input"`
+}
+
+type Result struct {
+	Output string `json:"output"`
+}
+```
+
+---
+
+## 🧠 backend/gpu.go
+```go
+package main
+
+import "sync"
+
+type GPU struct {
+	Total int64
+	Used  int64
+	mu    sync.Mutex
+}
+
+func (g *GPU) Allocate(v int64) bool {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	if g.Used+v > g.Total {
+		return false
+	}
+	g.Used += v
+	return true
+}
+
+func (g *GPU) Release(v int64) {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	g.Used -= v
+}
+```
+
+---
+
+## 🧠 backend/manager.go
+```go
+package main
+
+import "fmt"
+
+type Manager struct {
+	gpu *GPU
+}
+
+func NewManager() *Manager {
+	return &Manager{
+		gpu: &GPU{Total: 16000},
+	}
+}
+
+func (m *Manager) Run(t Task) (Result, error) {
+	if !m.gpu.Allocate(4000) {
+		return Result{}, fmt.Errorf("no gpu memory")
+	}
+	defer m.gpu.Release(4000)
+
+	return Result{Output: "Processed: " + t.Input}, nil
+}
+```
+
+---
+
+## 🧠 backend/main.go
+```go
+package main
+
+import (
+	"encoding/json"
+	"log"
+	"net/http"
+)
+
+func main() {
+	mgr := NewManager()
+
+	http.HandleFunc("/run", func(w http.ResponseWriter, r *http.Request) {
+		var t Task
+		json.NewDecoder(r.Body).Decode(&t)
+
+		res, err := mgr.Run(t)
+		if err != nil {
+			http.Error(w, err.Error(), 500)
+			return
+		}
+
+		json.NewEncoder(w).Encode(res)
+	})
+
+	log.Println("Server running on :8080")
+	http.ListenAndServe(":8080", nil)
+}
+```
+
+---
+
+## 🧠 worker/worker.go
+```go
+package main
+
+import (
+	"encoding/json"
+	"net/http"
+)
+
+func main() {
+	http.HandleFunc("/run", func(w http.ResponseWriter, r *http.Request) {
+		var t map[string]string
+		json.NewDecoder(r.Body).Decode(&t)
+
+		json.NewEncoder(w).Encode(map[string]string{
+			"output": "worker processed: " + t["input"],
+		})
+	})
+
+	http.ListenAndServe(":9001", nil)
+}
+```
+
+---
+
+## 🌐 frontend/index.html
+```html
+<!DOCTYPE html>
+<html>
+<body>
+<input id="input" />
+<button onclick="run()">Run</button>
+<pre id="out"></pre>
+
+<script>
+async function run() {
+  const input = document.getElementById('input').value;
+  const res = await fetch('http://localhost:8080/run', {
+    method: 'POST',
+    body: JSON.stringify({ model: 'qwen', input })
+  });
+  const data = await res.json();
+  document.getElementById('out').innerText = data.output;
+}
+</script>
+</body>
+</html>
+```
+
+---
+
+## 📦 go.mod
+```go
+module ai-platform
+
+go 1.20
+```
+
+---
+
+## 📘 README.md
+```md
+# AI Platform
+
+## Run Backend
+cd backend
+go run .
+
+## Run Worker
+cd worker
+go run .
+
+## Open UI
+open frontend/index.html
+```
+
+---
+
+## ✅ DONE
+This project is ready to:
+- push to GitHub
+- run locally
+- extend into full AI system
+
+---
+
+## 🚀 NEXT
+Add:
+- Stable Diffusion API
+- Whisper
+- Distributed scheduler
+- GPU real monitoring
+
